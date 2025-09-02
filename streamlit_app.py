@@ -5,21 +5,31 @@ from sentence_transformers import SentenceTransformer, util
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 import torch
 import pickle
+import requests
+import tempfile
 
 st.set_page_config(page_title="Resumo e Termos de Indexação", layout="wide")
 st.title("Gerador de Resumos e Termos de Indexação (Gratuito)")
 
 # -------------------
-# 1. Carregar CSV de referência
+# 1. Carregar CSV grande do Google Drive
 # -------------------
-CSV_URL = "https://raw.githubusercontent.com/SEU_USUARIO/SEU_REPOSITORIO/main/seu_csv.csv"
+CSV_URL = "https://drive.google.com/uc?export=download&id=1fYroWa2-jgWIp6vbeTXYfpN76ev8fxSv"
+
 @st.cache_data
 def carregar_csv(url):
-    df = pd.read_csv(url)
+    response = requests.get(url, stream=True)
+    with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
+        for chunk in response.iter_content(chunk_size=32768):
+            if chunk:
+                tmp_file.write(chunk)
+        tmp_path = tmp_file.name
+    df = pd.read_csv(tmp_path)
     return df
 
-df = carregar_csv(CSV_URL)
-st.write(f"CSV carregado com {len(df)} linhas.")
+with st.spinner("Carregando CSV..."):
+    df = carregar_csv(CSV_URL)
+st.success(f"CSV carregado com {len(df)} linhas.")
 
 # -------------------
 # 2. Função para carregar .pkl do GitHub
