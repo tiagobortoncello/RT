@@ -13,7 +13,8 @@ st.title("Gerador de Resumos e Termos de Indexação (Gratuito)")
 # -------------------
 # 1. Carregar CSV do Google Drive
 # -------------------
-CSV_URL = "https://drive.google.com/uc?id=1mItaS5BJt56L-XlycODX6LVr_Q5j41-QN_PMP1Lfi7c"
+CSV_URL = "https://drive.google.com/uc?id=1fYroWa2-jgWIp6vbeTXYfpN76ev8fxSv"
+
 @st.cache_data
 def carregar_csv(url):
     df = pd.read_csv(url)
