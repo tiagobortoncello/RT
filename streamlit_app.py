@@ -6,6 +6,7 @@ from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 import torch
 import pickle
 import requests
+import tempfile
 
 st.set_page_config(page_title="Resumo e Termos de Indexação", layout="wide")
 st.title("Gerador de Resumos e Termos de Indexação (Gratuito)")
@@ -23,20 +24,36 @@ df = carregar_csv(CSV_URL)
 st.write(f"CSV carregado com {len(df)} linhas.")
 
 # -------------------
-# 2. Função para baixar e carregar .pkl do Google Drive
+# 2. Função para baixar e carregar .pkl grande do Google Drive
 # -------------------
 def download_pickle_drive(file_id):
+    """
+    Baixa um .pkl grande do Google Drive, salva temporariamente,
+    e retorna o objeto carregado via pickle.
+    """
     URL = "https://docs.google.com/uc?export=download"
     session = requests.Session()
+    
     response = session.get(URL, params={"id": file_id}, stream=True)
     
-    # Verifica se há confirmação de arquivo grande
+    # Lida com a confirmação de arquivo grande
     for key, value in response.cookies.items():
         if key.startswith("download_warning"):
             response = session.get(URL, params={"id": file_id, "confirm": value}, stream=True)
             break
+    
+    # Salva o conteúdo em um arquivo temporário
+    with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
+        for chunk in response.iter_content(chunk_size=32768):
+            if chunk:
+                tmp_file.write(chunk)
+        tmp_file_path = tmp_file.name
 
-    return pickle.loads(response.content)
+    # Carrega o pickle do arquivo temporário
+    with open(tmp_file_path, "rb") as f:
+        obj = pickle.load(f)
+    
+    return obj
 
 # -------------------
 # 3. Dicionário com IDs dos arquivos .pkl por tipo
@@ -59,8 +76,9 @@ links_pkl = {
 # 4. Seleção do tipo
 # -------------------
 tipo = st.selectbox("Selecione o tipo de proposição:", options=list(links_pkl.keys()))
-embeddings = download_pickle_drive(links_pkl[tipo])
-st.write(f"Embeddings carregados para o tipo: {tipo}")
+with st.spinner("Carregando embeddings do Drive..."):
+    embeddings = download_pickle_drive(links_pkl[tipo])
+st.success(f"Embeddings carregados para o tipo: {tipo}")
 
 # -------------------
 # 5. Receber texto novo
