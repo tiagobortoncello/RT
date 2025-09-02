@@ -11,7 +11,7 @@ st.set_page_config(page_title="Resumo e Termos de Indexação", layout="wide")
 st.title("Gerador de Resumos e Termos de Indexação (Gratuito)")
 
 # -------------------
-# 1. Carregar CSV de referência (opcional, para mostrar exemplos)
+# 1. Carregar CSV de referência (opcional)
 # -------------------
 CSV_URL = "https://drive.google.com/uc?id=1fYroWa2-jgWIp6vbeTXYfpN76ev8fxSv"
 @st.cache_data
@@ -23,36 +23,43 @@ df = carregar_csv(CSV_URL)
 st.write(f"CSV carregado com {len(df)} linhas.")
 
 # -------------------
-# 2. Função para carregar embeddings do Drive
+# 2. Função para baixar e carregar .pkl do Google Drive
 # -------------------
-def carregar_embeddings_drive(url):
-    response = requests.get(url)
-    response.raise_for_status()
-    embeddings = pickle.loads(response.content)
-    return embeddings
+def download_pickle_drive(file_id):
+    URL = "https://docs.google.com/uc?export=download"
+    session = requests.Session()
+    response = session.get(URL, params={"id": file_id}, stream=True)
+    
+    # Verifica se há confirmação de arquivo grande
+    for key, value in response.cookies.items():
+        if key.startswith("download_warning"):
+            response = session.get(URL, params={"id": file_id, "confirm": value}, stream=True)
+            break
+
+    return pickle.loads(response.content)
 
 # -------------------
-# 3. Dicionário com os links diretos dos .pkl de embeddings por tipo
+# 3. Dicionário com IDs dos arquivos .pkl por tipo
 # -------------------
 links_pkl = {
-    "Tipo1": "https://drive.google.com/uc?export=download&id=1-Zqcw5Zzhxra0R9Iw-acKZ-fppZRoezn",
-    "Tipo2": "https://drive.google.com/uc?export=download&id=1Fw2q8CEINjuGJDUt0riNSIq2tDq95ew6",
-    "Tipo3": "https://drive.google.com/uc?export=download&id=1dtocbhWiadIbRQgwumvrIXhOgv14WQXP",
-    "Tipo4": "https://drive.google.com/uc?export=download&id=1ZNYM-9CMVZ5qB9Z2n75qV9-11tso_8Du",
-    "Tipo5": "https://drive.google.com/uc?export=download&id=1sFOhMLigBywdHcH6bnyTl42rqFJ7wMU8",
-    "Tipo6": "https://drive.google.com/uc?export=download&id=1Vk_cMW7sgizpFExlwBNrDPzGF_6rT5ft",
-    "Tipo7": "https://drive.google.com/uc?export=download&id=11rS9Ad_OEJJk4Sn_RfQsDXGjU5qTbPpQ",
-    "Tipo8": "https://drive.google.com/uc?export=download&id=1_aQ4x9CssYDvuX5-GHDkyStWLJA2a9o-",
-    "Tipo9": "https://drive.google.com/uc?export=download&id=1rb7S-nykBEA7RMxnhEMb3J0pq9QbGhXC",
-    "Tipo10": "https://drive.google.com/uc?export=download&id=1bX5GrGrTT4W16s9fk4dqkKghdF8QhZ2Y",
-    "Tipo11": "https://drive.google.com/uc?export=download&id=1oEfNwobTeX0JpoCYsFuE_2PUC-wVy7Oj",
+    "Tipo1": "1-Zqcw5Zzhxra0R9Iw-acKZ-fppZRoezn",
+    "Tipo2": "1Fw2q8CEINjuGJDUt0riNSIq2tDq95ew6",
+    "Tipo3": "1dtocbhWiadIbRQgwumvrIXhOgv14WQXP",
+    "Tipo4": "1ZNYM-9CMVZ5qB9Z2n75qV9-11tso_8Du",
+    "Tipo5": "1sFOhMLigBywdHcH6bnyTl42rqFJ7wMU8",
+    "Tipo6": "1Vk_cMW7sgizpFExlwBNrDPzGF_6rT5ft",
+    "Tipo7": "11rS9Ad_OEJJk4Sn_RfQsDXGjU5qTbPpQ",
+    "Tipo8": "1_aQ4x9CssYDvuX5-GHDkyStWLJA2a9o-",
+    "Tipo9": "1rb7S-nykBEA7RMxnhEMb3J0pq9QbGhXC",
+    "Tipo10": "1bX5GrGrTT4W16s9fk4dqkKghdF8QhZ2Y",
+    "Tipo11": "1oEfNwobTeX0JpoCYsFuE_2PUC-wVy7Oj"
 }
 
 # -------------------
-# 4. Seleção do tipo de proposição
+# 4. Seleção do tipo
 # -------------------
 tipo = st.selectbox("Selecione o tipo de proposição:", options=list(links_pkl.keys()))
-embeddings = carregar_embeddings_drive(links_pkl[tipo])
+embeddings = download_pickle_drive(links_pkl[tipo])
 st.write(f"Embeddings carregados para o tipo: {tipo}")
 
 # -------------------
