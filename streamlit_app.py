@@ -19,6 +19,7 @@ CSV_URL = "https://drive.google.com/uc?export=download&id=1fYroWa2-jgWIp6vbeTXYf
 @st.cache_data
 def carregar_csv(url):
     response = requests.get(url, stream=True)
+    response.raise_for_status()
     with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
         for chunk in response.iter_content(chunk_size=32768):
             if chunk:
@@ -34,25 +35,30 @@ st.success(f"CSV carregado com {len(df)} linhas.")
 # -------------------
 # 2. Função para carregar .pkl do GitHub
 # -------------------
-def carregar_pickle_github(path):
-    with open(path, "rb") as f:
+def carregar_pickle_github(url_raw):
+    response = requests.get(url_raw)
+    response.raise_for_status()
+    with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
+        tmp_file.write(response.content)
+        tmp_path = tmp_file.name
+    with open(tmp_path, "rb") as f:
         return pickle.load(f)
 
 # -------------------
-# 3. Dicionário com arquivos .pkl por tipo
+# 3. Dicionário com links raw dos arquivos .pkl no GitHub
 # -------------------
 links_pkl = {
-    "Tipo1": "mlb_pl.pkl",
-    "Tipo2": "mlb_plc.pkl",
-    "Tipo3": "mlb_rqn.pkl",
-    "Tipo4": "mlb_rqc.pkl",
-    "Tipo5": "mlb_pre.pkl",
-    "Tipo6": "mlb_rel.pkl",
-    "Tipo7": "mlb_ind.pkl",
-    "Tipo8": "mlb_ofi.pkl",
-    "Tipo9": "mlb_vet.pkl",
-    "Tipo10": "mlb_msg.pkl",
-    "Tipo11": "mlb_pec.pkl"
+    "Tipo1": "https://raw.githubusercontent.com/SEU_USUARIO/SEU_REPOSITORIO/main/mlb_pl.pkl",
+    "Tipo2": "https://raw.githubusercontent.com/SEU_USUARIO/SEU_REPOSITORIO/main/mlb_plc.pkl",
+    "Tipo3": "https://raw.githubusercontent.com/SEU_USUARIO/SEU_REPOSITORIO/main/mlb_rqn.pkl",
+    "Tipo4": "https://raw.githubusercontent.com/SEU_USUARIO/SEU_REPOSITORIO/main/mlb_rqc.pkl",
+    "Tipo5": "https://raw.githubusercontent.com/SEU_USUARIO/SEU_REPOSITORIO/main/mlb_pre.pkl",
+    "Tipo6": "https://raw.githubusercontent.com/SEU_USUARIO/SEU_REPOSITORIO/main/mlb_rel.pkl",
+    "Tipo7": "https://raw.githubusercontent.com/SEU_USUARIO/SEU_REPOSITORIO/main/mlb_ind.pkl",
+    "Tipo8": "https://raw.githubusercontent.com/SEU_USUARIO/SEU_REPOSITORIO/main/mlb_ofi.pkl",
+    "Tipo9": "https://raw.githubusercontent.com/SEU_USUARIO/SEU_REPOSITORIO/main/mlb_vet.pkl",
+    "Tipo10": "https://raw.githubusercontent.com/SEU_USUARIO/SEU_REPOSITORIO/main/mlb_msg.pkl",
+    "Tipo11": "https://raw.githubusercontent.com/SEU_USUARIO/SEU_REPOSITORIO/main/mlb_pec.pkl"
 }
 
 # -------------------
@@ -71,7 +77,7 @@ texto_novo = st.text_area("Insira o texto da proposição:")
 if st.button("Gerar resumo e termos") and texto_novo.strip():
 
     # -------------------
-    # 6. Recuperar exemplos similares
+    # 6. Recuperar exemplos similares usando SentenceTransformers
     # -------------------
     model_emb = SentenceTransformer('all-MiniLM-L6-v2')
     emb_novo = model_emb.encode([texto_novo])[0]
