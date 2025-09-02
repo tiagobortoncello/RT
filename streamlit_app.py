@@ -5,16 +5,14 @@ from sentence_transformers import SentenceTransformer, util
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 import torch
 import pickle
-import requests
-import tempfile
 
 st.set_page_config(page_title="Resumo e Termos de Indexação", layout="wide")
 st.title("Gerador de Resumos e Termos de Indexação (Gratuito)")
 
 # -------------------
-# 1. Carregar CSV de referência (opcional)
+# 1. Carregar CSV de referência
 # -------------------
-CSV_URL = "https://drive.google.com/uc?id=1fYroWa2-jgWIp6vbeTXYfpN76ev8fxSv"
+CSV_URL = "https://raw.githubusercontent.com/SEU_USUARIO/SEU_REPOSITORIO/main/seu_csv.csv"
 @st.cache_data
 def carregar_csv(url):
     df = pd.read_csv(url)
@@ -24,60 +22,35 @@ df = carregar_csv(CSV_URL)
 st.write(f"CSV carregado com {len(df)} linhas.")
 
 # -------------------
-# 2. Função para baixar e carregar .pkl grande do Google Drive
+# 2. Função para carregar .pkl do GitHub
 # -------------------
-def download_pickle_drive(file_id):
-    """
-    Baixa um .pkl grande do Google Drive, salva temporariamente,
-    e retorna o objeto carregado via pickle.
-    """
-    URL = "https://docs.google.com/uc?export=download"
-    session = requests.Session()
-    
-    response = session.get(URL, params={"id": file_id}, stream=True)
-    
-    # Lida com a confirmação de arquivo grande
-    for key, value in response.cookies.items():
-        if key.startswith("download_warning"):
-            response = session.get(URL, params={"id": file_id, "confirm": value}, stream=True)
-            break
-    
-    # Salva o conteúdo em um arquivo temporário
-    with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
-        for chunk in response.iter_content(chunk_size=32768):
-            if chunk:
-                tmp_file.write(chunk)
-        tmp_file_path = tmp_file.name
-
-    # Carrega o pickle do arquivo temporário
-    with open(tmp_file_path, "rb") as f:
-        obj = pickle.load(f)
-    
-    return obj
+def carregar_pickle_github(path):
+    with open(path, "rb") as f:
+        return pickle.load(f)
 
 # -------------------
-# 3. Dicionário com IDs dos arquivos .pkl por tipo
+# 3. Dicionário com arquivos .pkl por tipo
 # -------------------
 links_pkl = {
-    "Tipo1": "1-Zqcw5Zzhxra0R9Iw-acKZ-fppZRoezn",
-    "Tipo2": "1Fw2q8CEINjuGJDUt0riNSIq2tDq95ew6",
-    "Tipo3": "1dtocbhWiadIbRQgwumvrIXhOgv14WQXP",
-    "Tipo4": "1ZNYM-9CMVZ5qB9Z2n75qV9-11tso_8Du",
-    "Tipo5": "1sFOhMLigBywdHcH6bnyTl42rqFJ7wMU8",
-    "Tipo6": "1Vk_cMW7sgizpFExlwBNrDPzGF_6rT5ft",
-    "Tipo7": "11rS9Ad_OEJJk4Sn_RfQsDXGjU5qTbPpQ",
-    "Tipo8": "1_aQ4x9CssYDvuX5-GHDkyStWLJA2a9o-",
-    "Tipo9": "1rb7S-nykBEA7RMxnhEMb3J0pq9QbGhXC",
-    "Tipo10": "1bX5GrGrTT4W16s9fk4dqkKghdF8QhZ2Y",
-    "Tipo11": "1oEfNwobTeX0JpoCYsFuE_2PUC-wVy7Oj"
+    "Tipo1": "mlb_pl.pkl",
+    "Tipo2": "mlb_plc.pkl",
+    "Tipo3": "mlb_rqn.pkl",
+    "Tipo4": "mlb_rqc.pkl",
+    "Tipo5": "mlb_pre.pkl",
+    "Tipo6": "mlb_rel.pkl",
+    "Tipo7": "mlb_ind.pkl",
+    "Tipo8": "mlb_ofi.pkl",
+    "Tipo9": "mlb_vet.pkl",
+    "Tipo10": "mlb_msg.pkl",
+    "Tipo11": "mlb_pec.pkl"
 }
 
 # -------------------
 # 4. Seleção do tipo
 # -------------------
 tipo = st.selectbox("Selecione o tipo de proposição:", options=list(links_pkl.keys()))
-with st.spinner("Carregando embeddings do Drive..."):
-    embeddings = download_pickle_drive(links_pkl[tipo])
+with st.spinner("Carregando embeddings..."):
+    embeddings = carregar_pickle_github(links_pkl[tipo])
 st.success(f"Embeddings carregados para o tipo: {tipo}")
 
 # -------------------
