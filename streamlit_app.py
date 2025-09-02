@@ -33,11 +33,13 @@ with st.spinner("Carregando CSV..."):
 st.success(f"CSV carregado com {len(df)} linhas.")
 
 # -------------------
-# 2. Função para carregar .pkl do GitHub
+# 2. Função para carregar .pkl do GitHub com verificação HTTP
 # -------------------
 def carregar_pickle_github(url_raw):
     response = requests.get(url_raw)
-    response.raise_for_status()
+    if response.status_code != 200:
+        st.error(f"Erro ao acessar o arquivo: {url_raw} (status {response.status_code})")
+        return None
     with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
         tmp_file.write(response.content)
         tmp_path = tmp_file.name
@@ -48,17 +50,17 @@ def carregar_pickle_github(url_raw):
 # 3. Dicionário com links raw dos arquivos .pkl no GitHub
 # -------------------
 links_pkl = {
-    "Tipo1": "https://raw.githubusercontent.com/SEU_USUARIO/SEU_REPOSITORIO/main/mlb_pl.pkl",
-    "Tipo2": "https://raw.githubusercontent.com/SEU_USUARIO/SEU_REPOSITORIO/main/mlb_plc.pkl",
-    "Tipo3": "https://raw.githubusercontent.com/SEU_USUARIO/SEU_REPOSITORIO/main/mlb_rqn.pkl",
-    "Tipo4": "https://raw.githubusercontent.com/SEU_USUARIO/SEU_REPOSITORIO/main/mlb_rqc.pkl",
-    "Tipo5": "https://raw.githubusercontent.com/SEU_USUARIO/SEU_REPOSITORIO/main/mlb_pre.pkl",
-    "Tipo6": "https://raw.githubusercontent.com/SEU_USUARIO/SEU_REPOSITORIO/main/mlb_rel.pkl",
-    "Tipo7": "https://raw.githubusercontent.com/SEU_USUARIO/SEU_REPOSITORIO/main/mlb_ind.pkl",
-    "Tipo8": "https://raw.githubusercontent.com/SEU_USUARIO/SEU_REPOSITORIO/main/mlb_ofi.pkl",
-    "Tipo9": "https://raw.githubusercontent.com/SEU_USUARIO/SEU_REPOSITORIO/main/mlb_vet.pkl",
-    "Tipo10": "https://raw.githubusercontent.com/SEU_USUARIO/SEU_REPOSITORIO/main/mlb_msg.pkl",
-    "Tipo11": "https://raw.githubusercontent.com/SEU_USUARIO/SEU_REPOSITORIO/main/mlb_pec.pkl"
+    "Tipo1": "https://raw.githubusercontent.com/tiagobortoncello/RT/main/mlb_pl.pkl",
+    "Tipo2": "https://raw.githubusercontent.com/tiagobortoncello/RT/main/mlb_plc.pkl",
+    "Tipo3": "https://raw.githubusercontent.com/tiagobortoncello/RT/main/mlb_rqn.pkl",
+    "Tipo4": "https://raw.githubusercontent.com/tiagobortoncello/RT/main/mlb_rqc.pkl",
+    "Tipo5": "https://raw.githubusercontent.com/tiagobortoncello/RT/main/mlb_pre.pkl",
+    "Tipo6": "https://raw.githubusercontent.com/tiagobortoncello/RT/main/mlb_rel.pkl",
+    "Tipo7": "https://raw.githubusercontent.com/tiagobortoncello/RT/main/mlb_ind.pkl",
+    "Tipo8": "https://raw.githubusercontent.com/tiagobortoncello/RT/main/mlb_ofi.pkl",
+    "Tipo9": "https://raw.githubusercontent.com/tiagobortoncello/RT/main/mlb_vet.pkl",
+    "Tipo10": "https://raw.githubusercontent.com/tiagobortoncello/RT/main/mlb_msg.pkl",
+    "Tipo11": "https://raw.githubusercontent.com/tiagobortoncello/RT/main/mlb_pec.pkl"
 }
 
 # -------------------
@@ -67,6 +69,8 @@ links_pkl = {
 tipo = st.selectbox("Selecione o tipo de proposição:", options=list(links_pkl.keys()))
 with st.spinner("Carregando embeddings..."):
     embeddings = carregar_pickle_github(links_pkl[tipo])
+if embeddings is None:
+    st.stop()
 st.success(f"Embeddings carregados para o tipo: {tipo}")
 
 # -------------------
